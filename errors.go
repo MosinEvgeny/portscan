@@ -19,3 +19,6 @@ var (
 	// или вернул пустой ответ.
 	ErrUnresolvable = errors.New("portscan: host cannot be resolved")
 )
+
+// ErrInvalidOption возвращает New, если опция задана неверно.
+var ErrInvalidOption = errors.New("portscan: invalid option")
