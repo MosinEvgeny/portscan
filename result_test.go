@@ -3,6 +3,7 @@ package portscan
 import "testing"
 
 func TestState_String(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		s    State
 		want string
@@ -24,6 +25,7 @@ func TestState_String(t *testing.T) {
 }
 
 func TestState_ZeroValueIsNotOpen(t *testing.T) {
+	t.Parallel()
 	var r Result
 	if r.State == StateOpen {
 		t.Error("пустой Result выглядит как открытый порт")

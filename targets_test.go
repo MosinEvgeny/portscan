@@ -8,15 +8,8 @@ import (
 	"testing"
 )
 
-func hostsOf(targets []target) []string {
-	var hosts []string
-	for _, t := range targets {
-		hosts = append(hosts, t.host)
-	}
-	return hosts
-}
-
 func TestParseTargets_Valid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		in   []string
@@ -36,6 +29,7 @@ func TestParseTargets_Valid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := parseTargets(tt.in)
 			if err != nil {
 				t.Fatalf("parseTargets(%q) error = %v", tt.in, err)
@@ -48,6 +42,7 @@ func TestParseTargets_Valid(t *testing.T) {
 }
 
 func TestParseTargets_IPOrName(t *testing.T) {
+	t.Parallel()
 	got, err := parseTargets([]string{"10.0.0.1", "example.com", "::1", "fe80::1%en0"})
 	if err != nil {
 		t.Fatal(err)
@@ -66,6 +61,7 @@ func TestParseTargets_IPOrName(t *testing.T) {
 }
 
 func TestParseTargets_Duplicates(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		in   []string
@@ -83,6 +79,7 @@ func TestParseTargets_Duplicates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := parseTargets(tt.in)
 			if err != nil {
 				t.Fatal(err)
@@ -95,6 +92,7 @@ func TestParseTargets_Duplicates(t *testing.T) {
 }
 
 func TestParseTargets_NoTargets(t *testing.T) {
+	t.Parallel()
 	for _, in := range [][]string{nil, {}} {
 		if _, err := parseTargets(in); !errors.Is(err, ErrNoTargets) {
 			t.Errorf("parseTargets(%v) error = %v, want ErrNoTargets", in, err)
@@ -103,6 +101,7 @@ func TestParseTargets_NoTargets(t *testing.T) {
 }
 
 func TestParseTargets_EmptyHost(t *testing.T) {
+	t.Parallel()
 	for _, h := range []string{"", " ", "\t\n"} {
 		_, err := parseTargets([]string{h})
 		if !errors.Is(err, ErrEmptyHost) {
@@ -115,6 +114,7 @@ func TestParseTargets_EmptyHost(t *testing.T) {
 }
 
 func TestParseTargets_InvalidHost(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		host string
@@ -150,6 +150,7 @@ func TestParseTargets_InvalidHost(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := parseTargets([]string{tt.host})
 			if !errors.Is(err, ErrInvalidHost) {
 				t.Errorf("parseTargets(%q) error = %v, want ErrInvalidHost", tt.host, err)
@@ -159,6 +160,7 @@ func TestParseTargets_InvalidHost(t *testing.T) {
 }
 
 func TestParseTargets_HostnameLengthBoundary(t *testing.T) {
+	t.Parallel()
 	// 253 символа - можно, 254 - нельзя
 	label := strings.Repeat("a", 61)
 	name253 := strings.Join([]string{label, label, label, strings.Repeat("a", 61)}, ".") // 61*4+3 = 247
@@ -175,6 +177,7 @@ func TestParseTargets_HostnameLengthBoundary(t *testing.T) {
 }
 
 func TestParseTargets_AllProblemsAreReported(t *testing.T) {
+	t.Parallel()
 	_, err := parseTargets([]string{"ok.com", "", "bad host", "999.1.1.1", "  "})
 	if !errors.Is(err, ErrEmptyHost) || !errors.Is(err, ErrInvalidHost) {
 		t.Fatalf("error = %v, want ErrEmptyHost and ErrInvalidHost", err)
@@ -187,6 +190,7 @@ func TestParseTargets_AllProblemsAreReported(t *testing.T) {
 }
 
 func TestParseTargets_OneBadHostFailsEverything(t *testing.T) {
+	t.Parallel()
 	// ошибки синтаксиса - fail-fast: годные хосты не возвращаются
 	got, err := parseTargets([]string{"ok.com", "bad host"})
 	if err == nil || got != nil {
@@ -195,6 +199,7 @@ func TestParseTargets_OneBadHostFailsEverything(t *testing.T) {
 }
 
 func TestParseTargets_DoesNotKeepInput(t *testing.T) {
+	t.Parallel()
 	in := []string{"a.com", "b.com"}
 	got, err := parseTargets(in)
 	if err != nil {

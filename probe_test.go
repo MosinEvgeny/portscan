@@ -6,37 +6,11 @@ import (
 	"io"
 	"net"
 	"os"
-	"sync/atomic"
 	"syscall"
 	"testing"
 	"testing/synctest"
 	"time"
 )
-
-// fakeConn считает вызовы Close, остальные методы net.Conn не нужны
-type fakeConn struct {
-	net.Conn
-	closes atomic.Int32
-}
-
-func (c *fakeConn) Close() error {
-	c.closes.Add(1)
-	return nil
-}
-
-type dialFunc func(ctx context.Context, network, address string) (net.Conn, error)
-
-func (f dialFunc) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	return f(ctx, network, address)
-}
-
-// dialer, который висит, пока не истечёт контекст попытки
-func hangingDialer() Dialer {
-	return dialFunc(func(ctx context.Context, _, _ string) (net.Conn, error) {
-		<-ctx.Done()
-		return nil, ctx.Err()
-	})
-}
 
 func TestProbe_Open(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {

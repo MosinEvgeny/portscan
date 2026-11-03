@@ -11,32 +11,8 @@ import (
 	"time"
 )
 
-// dialErr - ошибка в том виде, в каком её отдаёт net.Dialer:
-// "dial tcp 1.2.3.4:80: connect: connection refused"
-func dialErr(errno error) error {
-	return &net.OpError{Op: "dial", Net: "tcp", Err: os.NewSyscallError("connect", errno)}
-}
-
-// fakeNetError - свой net.Error с заданным Timeout
-type fakeNetError struct{ timeout bool }
-
-func (e fakeNetError) Error() string   { return "fake net error" }
-func (e fakeNetError) Timeout() bool   { return e.timeout }
-func (e fakeNetError) Temporary() bool { return false }
-
-func canceledCtx() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	return ctx
-}
-
-func expiredCtx() context.Context {
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
-	cancel()
-	return ctx
-}
-
 func TestClassify(t *testing.T) {
+	t.Parallel()
 	alive := context.Background()
 
 	tests := []struct {
@@ -102,6 +78,7 @@ func TestClassify(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := classify(tt.ctx, tt.err); got != tt.want {
 				t.Errorf("classify(%v) = %v, want %v", tt.err, got, tt.want)
 			}

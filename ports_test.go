@@ -9,6 +9,7 @@ import (
 )
 
 func TestPortSet_ZeroValue(t *testing.T) {
+	t.Parallel()
 	var s PortSet
 	if !errors.Is(s.Err(), ErrNoPorts) {
 		t.Errorf("Err() = %v, want ErrNoPorts", s.Err())
@@ -25,6 +26,7 @@ func TestPortSet_ZeroValue(t *testing.T) {
 }
 
 func TestPorts(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		in   []int
@@ -39,6 +41,7 @@ func TestPorts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			s := Ports(tt.in...)
 			if err := s.Err(); err != nil {
 				t.Fatalf("Err() = %v, want nil", err)
@@ -51,12 +54,14 @@ func TestPorts(t *testing.T) {
 }
 
 func TestPorts_Empty(t *testing.T) {
+	t.Parallel()
 	if err := Ports().Err(); !errors.Is(err, ErrNoPorts) {
 		t.Errorf("Err() = %v, want ErrNoPorts", err)
 	}
 }
 
 func TestPorts_Invalid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		in   []int
@@ -69,6 +74,7 @@ func TestPorts_Invalid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			s := Ports(tt.in...)
 			if err := s.Err(); !errors.Is(err, ErrInvalidPort) {
 				t.Fatalf("Err() = %v, want ErrInvalidPort", err)
@@ -82,6 +88,7 @@ func TestPorts_Invalid(t *testing.T) {
 }
 
 func TestPorts_AllProblemsAreReported(t *testing.T) {
+	t.Parallel()
 	err := Ports(80, 0, 70000, 443, -5).Err()
 	if !errors.Is(err, ErrInvalidPort) {
 		t.Fatalf("Err() = %v, want ErrInvalidPort", err)
@@ -94,6 +101,7 @@ func TestPorts_AllProblemsAreReported(t *testing.T) {
 }
 
 func TestRange(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		from, to int
@@ -107,6 +115,7 @@ func TestRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			s := Range(tt.from, tt.to)
 			if err := s.Err(); err != nil {
 				t.Fatalf("Err() = %v, want nil", err)
@@ -122,6 +131,7 @@ func TestRange(t *testing.T) {
 }
 
 func TestRange_IsStoredCompactly(t *testing.T) {
+	t.Parallel()
 	// память не должна зависеть от числа портов
 	if n := len(Range(1, 65535).ranges); n != 1 {
 		t.Errorf("Range(1, 65535) uses %d ranges, want 1", n)
@@ -129,6 +139,7 @@ func TestRange_IsStoredCompactly(t *testing.T) {
 }
 
 func TestRange_Invalid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		from, to int
@@ -142,6 +153,7 @@ func TestRange_Invalid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			s := Range(tt.from, tt.to)
 			err := s.Err()
 			if !errors.Is(err, tt.want) {
@@ -158,6 +170,7 @@ func TestRange_Invalid(t *testing.T) {
 }
 
 func TestUnion(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		set  PortSet
@@ -175,6 +188,7 @@ func TestUnion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := tt.set.Err(); err != nil {
 				t.Fatalf("Err() = %v, want nil", err)
 			}
@@ -186,6 +200,7 @@ func TestUnion(t *testing.T) {
 }
 
 func TestUnion_Errors(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		set  PortSet
@@ -199,6 +214,7 @@ func TestUnion_Errors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.set.Err()
 			for _, want := range tt.want {
 				if !errors.Is(err, want) {
@@ -213,6 +229,7 @@ func TestUnion_Errors(t *testing.T) {
 }
 
 func TestUnion_DoesNotShareStorageWithArguments(t *testing.T) {
+	t.Parallel()
 	a := Ports(1, 3) // два отрезка: "1,3"
 	u := Union(a)
 	u.ranges[0].hi = 9
@@ -222,6 +239,7 @@ func TestUnion_DoesNotShareStorageWithArguments(t *testing.T) {
 }
 
 func TestParsePorts(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		spec string
 		want string
@@ -241,6 +259,7 @@ func TestParsePorts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.spec, func(t *testing.T) {
+			t.Parallel()
 			s, err := ParsePorts(tt.spec)
 			if err != nil {
 				t.Fatalf("ParsePorts(%q) error = %v", tt.spec, err)
@@ -253,6 +272,7 @@ func TestParsePorts(t *testing.T) {
 }
 
 func TestParsePorts_Invalid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		spec string
 		want error
@@ -289,6 +309,7 @@ func TestParsePorts_Invalid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.spec, func(t *testing.T) {
+			t.Parallel()
 			s, err := ParsePorts(tt.spec)
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("ParsePorts(%q) error = %v, want %v", tt.spec, err, tt.want)
@@ -302,6 +323,7 @@ func TestParsePorts_Invalid(t *testing.T) {
 }
 
 func TestParsePorts_AllProblemsAreReported(t *testing.T) {
+	t.Parallel()
 	_, err := ParsePorts("80,abc,70000,5-1")
 	if !errors.Is(err, ErrInvalidPort) || !errors.Is(err, ErrInvalidRange) {
 		t.Fatalf("error = %v, want both ErrInvalidPort and ErrInvalidRange", err)
@@ -314,6 +336,7 @@ func TestParsePorts_AllProblemsAreReported(t *testing.T) {
 }
 
 func TestPortSet_StringRoundTrip(t *testing.T) {
+	t.Parallel()
 	sets := []PortSet{
 		Ports(80),
 		Range(1, 65535),
@@ -333,6 +356,7 @@ func TestPortSet_StringRoundTrip(t *testing.T) {
 }
 
 func TestPortSet_AllIsAscendingAndComplete(t *testing.T) {
+	t.Parallel()
 	s := Union(Ports(443, 22), Range(8000, 8003))
 	want := []uint16{22, 443, 8000, 8001, 8002, 8003}
 	if got := slices.Collect(s.all()); !slices.Equal(got, want) {
@@ -344,6 +368,7 @@ func TestPortSet_AllIsAscendingAndComplete(t *testing.T) {
 }
 
 func TestPortSet_AllReachesPort65535(t *testing.T) {
+	t.Parallel()
 	// цикл по uint16 тут бы завис
 	got := slices.Collect(Range(65530, 65535).all())
 	want := []uint16{65530, 65531, 65532, 65533, 65534, 65535}
@@ -356,6 +381,7 @@ func TestPortSet_AllReachesPort65535(t *testing.T) {
 }
 
 func TestPortSet_AllStopsWhenAsked(t *testing.T) {
+	t.Parallel()
 	var got []uint16
 	for p := range Range(1, 100).all() {
 		got = append(got, p)
@@ -369,6 +395,7 @@ func TestPortSet_AllStopsWhenAsked(t *testing.T) {
 }
 
 func TestPorts_EveryPortInAnyOrder(t *testing.T) {
+	t.Parallel()
 	// максимальный вход в худшем порядке
 	in := make([]int, 0, 65535)
 	for p := 65535; p >= 1; p-- {

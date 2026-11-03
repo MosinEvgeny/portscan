@@ -7,74 +7,10 @@ import (
 	"net/netip"
 	"slices"
 	"strings"
-	"sync"
 	"testing"
 	"testing/synctest"
 	"time"
 )
-
-func addr(s string) netip.Addr { return netip.MustParseAddr(s) }
-
-func mustTargets(t *testing.T, hosts ...string) []target {
-	t.Helper()
-	targets, err := parseTargets(hosts)
-	if err != nil {
-		t.Fatalf("parseTargets(%q): %v", hosts, err)
-	}
-	return targets
-}
-
-// что fakeResolver отвечает на конкретное имя
-type answer struct {
-	addrs []netip.Addr
-	err   error
-	delay time.Duration // сколько resolver "думает"
-	block bool          // висит, пока не отменят ctx
-}
-
-// fakeResolver отвечает по таблице. Имя, которого в таблице нет, - "no such host".
-type fakeResolver struct {
-	answers map[string]answer
-
-	mu          sync.Mutex
-	calls       []string // имена в порядке вызова
-	networks    []string
-	done        []string // имена в порядке завершения
-	inFlight    int
-	maxInFlight int
-}
-
-func (f *fakeResolver) LookupNetIP(ctx context.Context, network, host string) ([]netip.Addr, error) {
-	f.mu.Lock()
-	f.calls = append(f.calls, host)
-	f.networks = append(f.networks, network)
-	f.inFlight++
-	f.maxInFlight = max(f.maxInFlight, f.inFlight)
-	a, known := f.answers[host]
-	f.mu.Unlock()
-	defer func() {
-		f.mu.Lock()
-		f.inFlight--
-		f.done = append(f.done, host)
-		f.mu.Unlock()
-	}()
-
-	if a.block {
-		<-ctx.Done()
-		return nil, ctx.Err()
-	}
-	if a.delay > 0 {
-		select {
-		case <-time.After(a.delay):
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
-	if !known {
-		return nil, &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
-	}
-	return a.addrs, a.err
-}
 
 func TestResolve_IPLiteralsNeedNoDNS(t *testing.T) {
 	r := &fakeResolver{}

@@ -9,6 +9,7 @@ import (
 )
 
 func TestNew_Defaults(t *testing.T) {
+	t.Parallel()
 	s, err := New()
 	if err != nil {
 		t.Fatal(err)
@@ -28,6 +29,7 @@ func TestNew_Defaults(t *testing.T) {
 }
 
 func TestNew_Options(t *testing.T) {
+	t.Parallel()
 	r, d := &fakeResolver{}, &fakeDialer{}
 	s, err := New(
 		WithConcurrency(7),
@@ -50,6 +52,7 @@ func TestNew_Options(t *testing.T) {
 }
 
 func TestNew_LastOptionWins(t *testing.T) {
+	t.Parallel()
 	s, err := New(WithConcurrency(5), WithConcurrency(9))
 	if err != nil {
 		t.Fatal(err)
@@ -60,12 +63,14 @@ func TestNew_LastOptionWins(t *testing.T) {
 }
 
 func TestNew_NilOptionIsIgnored(t *testing.T) {
+	t.Parallel()
 	if _, err := New(nil, WithConcurrency(3), nil); err != nil {
 		t.Errorf("New(nil, ...) error = %v", err)
 	}
 }
 
 func TestNew_InvalidOptions(t *testing.T) {
+	t.Parallel()
 	var nilResolver Resolver
 	var nilDialer Dialer
 	tests := []struct {
@@ -81,6 +86,7 @@ func TestNew_InvalidOptions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			s, err := New(tt.opt)
 			if !errors.Is(err, ErrInvalidOption) {
 				t.Errorf("error = %v, want ErrInvalidOption", err)
@@ -93,6 +99,7 @@ func TestNew_InvalidOptions(t *testing.T) {
 }
 
 func TestNew_AllProblemsAreReported(t *testing.T) {
+	t.Parallel()
 	_, err := New(WithConcurrency(0), WithConnectTimeout(-time.Second), WithDialer(nil))
 	if !errors.Is(err, ErrInvalidOption) {
 		t.Fatalf("error = %v, want ErrInvalidOption", err)
@@ -105,6 +112,7 @@ func TestNew_AllProblemsAreReported(t *testing.T) {
 }
 
 func TestNew_ScannersAreIndependent(t *testing.T) {
+	t.Parallel()
 	a, _ := New(WithConcurrency(2))
 	b, _ := New(WithConcurrency(50))
 	if a.cfg.concurrency != 2 || b.cfg.concurrency != 50 {
@@ -116,6 +124,7 @@ func TestNew_ScannersAreIndependent(t *testing.T) {
 }
 
 func TestNew_DefaultsUseStandardTypes(t *testing.T) {
+	t.Parallel()
 	s, _ := New()
 	if _, ok := s.cfg.resolver.(*net.Resolver); !ok {
 		t.Errorf("resolver по умолчанию %T, want *net.Resolver", s.cfg.resolver)
