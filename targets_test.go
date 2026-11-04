@@ -250,3 +250,34 @@ func FuzzParseTargets(f *testing.F) {
 		}
 	})
 }
+
+func TestParseTargets_HostError(t *testing.T) {
+	t.Parallel()
+	_, err := parseTargets([]string{"ok.example", "a b", "", "10.0.0.1"})
+
+	var all []*HostError
+	if j, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, e := range j.Unwrap() {
+			var he *HostError
+			if errors.As(e, &he) {
+				all = append(all, he)
+			}
+		}
+	}
+	if len(all) != 2 {
+		t.Fatalf("HostError в ошибке: %d, want 2 (%v)", len(all), err)
+	}
+	if h := all[0]; h.Index != 1 || h.Host != "a b" || !errors.Is(h, ErrInvalidHost) {
+		t.Errorf("первая = %+v", h)
+	}
+	if h := all[1]; h.Index != 2 || h.Host != "" || !errors.Is(h, ErrEmptyHost) {
+		t.Errorf("вторая = %+v", h)
+	}
+
+	// один плохой хост: ошибка без Join, As тоже находит
+	_, err = parseTargets([]string{"a b"})
+	var he *HostError
+	if !errors.As(err, &he) || he.Index != 0 {
+		t.Errorf("errors.As(%v) не нашёл HostError", err)
+	}
+}

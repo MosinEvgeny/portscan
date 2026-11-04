@@ -141,3 +141,23 @@ func TestNew_DefaultsUseStandardTypes(t *testing.T) {
 		t.Errorf("KeepAlive = %v, want отключён (отрицательный)", d.KeepAlive)
 	}
 }
+
+func TestNew_ResolveTimeout(t *testing.T) {
+	t.Parallel()
+	s, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.cfg.resolveTime != 5*time.Second {
+		t.Errorf("resolveTime по умолчанию = %v, want 5s", s.cfg.resolveTime)
+	}
+	s, err = New(WithResolveTimeout(2 * time.Second))
+	if err != nil || s.cfg.resolveTime != 2*time.Second {
+		t.Errorf("WithResolveTimeout(2s): %v, %v", s, err)
+	}
+	for _, d := range []time.Duration{0, -time.Second} {
+		if _, err := New(WithResolveTimeout(d)); !errors.Is(err, ErrInvalidOption) {
+			t.Errorf("WithResolveTimeout(%v) error = %v, want ErrInvalidOption", d, err)
+		}
+	}
+}

@@ -345,3 +345,27 @@ func TestScan_RealLocalhost(t *testing.T) {
 		t.Errorf("сервер увидел %v, want io.EOF: скан не закрыл соединение", err)
 	}
 }
+
+// медленный DNS обрезается по WithResolveTimeout, остальные хосты сканируются
+func TestScan_SlowDNSIsCutOff(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		r := &fakeResolver{answers: map[string]answer{"hang.example": {block: true}}}
+		s := newTestScanner(t, &fakeDialer{}, r, WithResolveTimeout(2*time.Second))
+
+		start := time.Now()
+		results := collect(mustScan(t, s, bg, []string{"10.0.0.1", "hang.example"}, Ports(80)))
+
+		if took := time.Since(start); took != 2*time.Second {
+			t.Errorf("скан занял %v, want 2s", took)
+		}
+		if len(results) != 2 {
+			t.Fatalf("results = %+v, want 2", results)
+		}
+		if f := results[0]; f.Host != "hang.example" || !errors.Is(f.Err, ErrUnresolvable) || !errors.Is(f.Err, context.DeadlineExceeded) {
+			t.Errorf("первый результат = %+v, want таймаут DNS по hang.example", f)
+		}
+		if r := results[1]; r.IP != addr("10.0.0.1") || r.State != StateClosed {
+			t.Errorf("второй результат = %+v, want 10.0.0.1:80 closed", r)
+		}
+	})
+}

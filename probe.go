@@ -8,6 +8,7 @@ import (
 )
 
 // Dialer открывает TCP-соединение. Подходит *net.Dialer.
+// Scanner вызывает его из многих горутин сразу, поэтому реализация должна быть к этому готова
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }

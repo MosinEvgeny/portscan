@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// HostError описывает один неверный хост из списка.
+// Достаётся из ошибки Scan через errors.As.
 type HostError struct {
 	Index int    // позиция в списке hosts
 	Host  string // значение, как передали
