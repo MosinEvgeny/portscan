@@ -2,9 +2,13 @@ package portscan
 
 import (
 	"context"
+	"errors"
 	"net"
 	"sync"
 )
+
+// errNotCreated возвращает Scan у Scanner, который не создан через New.
+var errNotCreated = errors.New("portscan: Scanner must be created with New")
 
 // Scanner проверяет TCP-порты. Создаётся через New, дальше не меняется и
 // безопасен для одновременного использования из нескольких горутин.
@@ -18,6 +22,7 @@ func New(opts ...Option) (*Scanner, error) {
 	cfg := config{
 		concurrency: defaultConcurrency,
 		timeout:     defaultTimeout,
+		resolveTime: defaultResolveTime,
 		resolver:    new(net.Resolver),
 		dialer:      &net.Dialer{KeepAlive: -1}, // соединение сразу закрывается, keep-alive не нужен
 	}
@@ -47,12 +52,17 @@ func New(opts ...Option) (*Scanner, error) {
 // Канал закрывается, когда проверки закончились или остановлены отменой ctx:
 // новые не начинаются, начатые прерываются и приходят как StateCanceled.
 // Результат, который некому принять, после отмены отбрасывается. Если после
-// закрытия канала ctx.Err() != nil, результаты неполные.
+// закрытия канала ctx.Err() != nil, скан мог остановиться раньше времени
+// и результаты могут быть неполными. Отмена во время разрешения имён
+// оставляет канал без результатов.
 //
 // Канал нужно дочитать до конца или отменить ctx, иначе горутины скана
 // останутся ждать читателя. Медленный читатель замедляет скан, но не
 // приводит к росту памяти.
 func (s *Scanner) Scan(ctx context.Context, hosts []string, ports PortSet) (<-chan Result, error) {
+	if s == nil || s.sem == nil {
+		return nil, errNotCreated
+	}
 	targets, hostsErr := parseTargets(hosts)
 	var errs []error
 	if hostsErr != nil {
@@ -77,7 +87,8 @@ func (s *Scanner) Scan(ctx context.Context, hosts []string, ports PortSet) (<-ch
 func (s *Scanner) run(ctx context.Context, targets []target, ports PortSet, out chan<- Result) {
 	defer close(out)
 
-	endpoints, failed, err := resolve(ctx, s.cfg.resolver, targets, min(s.cfg.concurrency, maxResolveWorkers))
+	r := timeoutResolver{r: s.cfg.resolver, timeout: s.cfg.resolveTime}
+	endpoints, failed, err := resolve(ctx, r, targets, min(s.cfg.concurrency, maxResolveWorkers))
 	if err != nil {
 		return // отмена во время резолвинга
 	}

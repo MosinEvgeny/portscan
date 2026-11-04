@@ -34,6 +34,7 @@ func TestClassify(t *testing.T) {
 		// unreachable
 		{"сеть недоступна", alive, dialErr(syscall.ENETUNREACH), StateUnreachable},
 		{"хост недоступен", alive, dialErr(syscall.EHOSTUNREACH), StateUnreachable},
+		{"хост не отвечает, EHOSTDOWN как на macOS", alive, dialErr(syscall.EHOSTDOWN), StateUnreachable},
 		{"сеть лежит", alive, dialErr(syscall.ENETDOWN), StateUnreachable},
 		{"WSAENETUNREACH", alive, dialErr(wsaNetUnreach), StateUnreachable},
 		{"WSAEHOSTUNREACH", alive, dialErr(wsaHostUnreach), StateUnreachable},
@@ -96,7 +97,7 @@ func TestClassify_RealDialErrors(t *testing.T) {
 			t.Fatal(err)
 		}
 		addr := ln.Addr().String()
-		ln.Close() // на порту больше никто не слушает
+		_ = ln.Close() // на порту больше никто не слушает
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()

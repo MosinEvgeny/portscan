@@ -13,6 +13,16 @@ import (
 	"time"
 )
 
+func TestScan_ZeroScannerReturnsError(t *testing.T) {
+	var zero Scanner
+	for name, s := range map[string]*Scanner{"нулевое значение": &zero, "nil": nil} {
+		ch, err := s.Scan(bg, []string{"127.0.0.1"}, Ports(80))
+		if err == nil || ch != nil {
+			t.Errorf("%s: Scan вернул (%v, %v), want ошибку без канала", name, ch, err)
+		}
+	}
+}
+
 func TestScan_InvalidInput(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -283,7 +293,7 @@ func TestScan_RealLocalhost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	openPort := ln.Addr().(*net.TCPAddr).Port
 
 	// сервер принимает подключения и ждёт, пока клиент их закроет
@@ -294,8 +304,8 @@ func TestScan_RealLocalhost(t *testing.T) {
 			closedByClient <- err
 			return
 		}
-		defer conn.Close()
-		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+		defer func() { _ = conn.Close() }()
+		_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 		_, err = conn.Read(make([]byte, 1))
 		closedByClient <- err
 	}()
@@ -306,7 +316,7 @@ func TestScan_RealLocalhost(t *testing.T) {
 		t.Fatal(err)
 	}
 	closedPort := l2.Addr().(*net.TCPAddr).Port
-	l2.Close()
+	_ = l2.Close()
 
 	s, err := New(WithConnectTimeout(5 * time.Second))
 	if err != nil {

@@ -17,6 +17,18 @@ type Resolver interface {
 
 var _ Resolver = (*net.Resolver)(nil)
 
+// timeoutResolver ограничивает время одного DNS-запроса.
+type timeoutResolver struct {
+	r       Resolver
+	timeout time.Duration
+}
+
+func (t timeoutResolver) LookupNetIP(ctx context.Context, network, host string) ([]netip.Addr, error) {
+	ctx, cancel := context.WithTimeout(ctx, t.timeout)
+	defer cancel()
+	return t.r.LookupNetIP(ctx, network, host)
+}
+
 // endpoint - адрес, который будем сканировать
 type endpoint struct {
 	host string

@@ -1,6 +1,18 @@
 package portscan
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
+
+type HostError struct {
+	Index int    // позиция в списке hosts
+	Host  string // значение, как передали
+	Err   error  // ErrEmptyHost или ErrInvalidHost
+}
+
+func (e *HostError) Error() string { return fmt.Sprintf("%v: hosts[%d] %q", e.Err, e.Index, e.Host) }
+func (e *HostError) Unwrap() error { return e.Err }
 
 // Ошибки при задании портов. Проверять через errors.Is.
 var (

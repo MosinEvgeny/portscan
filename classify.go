@@ -49,6 +49,7 @@ func isRefused(err error) bool {
 func isUnreachable(err error) bool {
 	return errors.Is(err, syscall.ENETUNREACH) ||
 		errors.Is(err, syscall.EHOSTUNREACH) ||
+		errors.Is(err, syscall.EHOSTDOWN) ||
 		errors.Is(err, syscall.ENETDOWN) ||
 		errors.Is(err, wsaNetUnreach) ||
 		errors.Is(err, wsaHostUnreach) ||

@@ -8,6 +8,7 @@ import (
 const (
 	defaultConcurrency = 100
 	defaultTimeout     = time.Second
+	defaultResolveTime = 5 * time.Second
 
 	maxResolveWorkers = 16  // сколько DNS-запросов идёт одновременно, не больше
 	maxResultBuffer   = 256 // размер буфера канала с результатами, не больше
@@ -19,6 +20,7 @@ type Option func(*config) error
 type config struct {
 	concurrency int
 	timeout     time.Duration
+	resolveTime time.Duration
 	resolver    Resolver
 	dialer      Dialer
 }
@@ -47,6 +49,19 @@ func WithConnectTimeout(d time.Duration) Option {
 			return fmt.Errorf("%w: connect timeout must be positive, got %v", ErrInvalidOption, d)
 		}
 		c.timeout = d
+		return nil
+	}
+}
+
+// WithResolveTimeout задаёт, сколько ждать ответа DNS на одно имя
+// (по умолчанию 5 секунд). Имя, не разрешившееся за это время, приходит
+// как Result с ErrUnresolvable, остальные хосты сканируются дальше.
+func WithResolveTimeout(d time.Duration) Option {
+	return func(c *config) error {
+		if d <= 0 {
+			return fmt.Errorf("%w: resolve timeout must be positive, got %v", ErrInvalidOption, d)
+		}
+		c.resolveTime = d
 		return nil
 	}
 }

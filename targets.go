@@ -1,7 +1,6 @@
 package portscan
 
 import (
-	"fmt"
 	"net/netip"
 	"strings"
 )
@@ -32,12 +31,12 @@ func parseTargets(hosts []string) ([]target, error) {
 	for i, h := range hosts {
 		h = strings.TrimSpace(h)
 		if h == "" {
-			errs = append(errs, fmt.Errorf("%w: hosts[%d]", ErrEmptyHost, i))
+			errs = append(errs, &HostError{Index: i, Host: hosts[i], Err: ErrEmptyHost})
 			continue
 		}
 		t, key, ok := parseHost(h)
 		if !ok {
-			errs = append(errs, fmt.Errorf("%w: %q", ErrInvalidHost, h))
+			errs = append(errs, &HostError{Index: i, Host: hosts[i], Err: ErrInvalidHost})
 			continue
 		}
 		if _, dup := seen[key]; dup {
@@ -56,6 +55,9 @@ func parseTargets(hosts []string) ([]target, error) {
 func parseHost(h string) (target, targetKey, bool) {
 	if addr, err := netip.ParseAddr(h); err == nil {
 		addr = addr.Unmap() // ::ffff:1.2.3.4 и 1.2.3.4 - один хост
+		if addr.IsUnspecified() {
+			return target{}, targetKey{}, false // 0.0.0.0 и :: на деле значат localhost
+		}
 		return target{host: h, addr: addr}, targetKey{addr: addr}, true
 	}
 	name := strings.TrimSuffix(h, ".")

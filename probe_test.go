@@ -218,7 +218,7 @@ func TestProbe_RealOpenPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	// сервер ждёт, когда клиент закроет соединение
 	serverSaw := make(chan error, 1)
@@ -228,8 +228,8 @@ func TestProbe_RealOpenPort(t *testing.T) {
 			serverSaw <- err
 			return
 		}
-		defer conn.Close()
-		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+		defer func() { _ = conn.Close() }()
+		_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 		_, err = conn.Read(make([]byte, 1))
 		serverSaw <- err
 	}()
@@ -254,7 +254,7 @@ func TestProbe_RealClosedPort(t *testing.T) {
 		t.Fatal(err)
 	}
 	port := uint16(ln.Addr().(*net.TCPAddr).Port)
-	ln.Close()
+	_ = ln.Close()
 
 	got := probe(context.Background(), &net.Dialer{}, endpoint{host: "localhost", ip: addr("127.0.0.1")}, port, 10*time.Second)
 	if got.State != StateClosed {
