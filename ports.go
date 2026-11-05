@@ -101,6 +101,23 @@ func (s PortSet) Err() error {
 	return nil
 }
 
+// Len возвращает, сколько портов в наборе.
+func (s PortSet) Len() int { return s.count() }
+
+// Contains сообщает, есть ли port в наборе.
+func (s PortSet) Contains(port int) bool {
+	_, found := slices.BinarySearchFunc(s.ranges, port, func(r portRange, p int) int {
+		switch {
+		case int(r.hi) < p:
+			return -1
+		case int(r.lo) > p:
+			return 1
+		}
+		return 0
+	})
+	return found
+}
+
 // String возвращает каноничную запись, например "22,80,8000-8100".
 func (s PortSet) String() string {
 	var b strings.Builder

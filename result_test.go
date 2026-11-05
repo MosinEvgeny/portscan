@@ -1,6 +1,9 @@
 package portscan
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestState_String(t *testing.T) {
 	t.Parallel()
@@ -32,5 +35,16 @@ func TestState_ZeroValueIsNotOpen(t *testing.T) {
 	}
 	if r.State != StateUnknown {
 		t.Errorf("State = %v, want unknown", r.State)
+	}
+}
+
+func TestState_MarshalText(t *testing.T) {
+	t.Parallel()
+	b, err := json.Marshal(struct{ State State }{StateTimeout})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(b), `{"State":"timeout"}`; got != want {
+		t.Errorf("json = %s, want %s", got, want)
 	}
 }

@@ -11,7 +11,7 @@ import (
 )
 
 // Resolver переводит имя хоста в IP-адреса. Подходит *net.Resolver.
-// Scanner вызывает его из многих горутин сразу, поэтому реализация должна быть к этому готова
+// Scanner вызывает его из многих горутин сразу, поэтому реализация должна быть к этому готова.
 type Resolver interface {
 	LookupNetIP(ctx context.Context, network, host string) ([]netip.Addr, error)
 }

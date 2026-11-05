@@ -369,3 +369,21 @@ func TestScan_SlowDNSIsCutOff(t *testing.T) {
 		}
 	})
 }
+
+func TestScan_RealLocalhostIPv6(t *testing.T) {
+	ln, err := net.Listen("tcp", "[::1]:0")
+	if err != nil {
+		t.Skip("на этой машине нет IPv6 loopback")
+	}
+	defer func() { _ = ln.Close() }()
+	port := ln.Addr().(*net.TCPAddr).Port
+
+	s, err := New(WithConnectTimeout(5 * time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
+	results := collect(mustScan(t, s, bg, []string{"::1"}, Ports(port)))
+	if len(results) != 1 || results[0].State != StateOpen || results[0].IP != addr("::1") {
+		t.Errorf("results = %+v, want ::1:%d open", results, port)
+	}
+}

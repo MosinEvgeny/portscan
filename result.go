@@ -18,6 +18,11 @@ const (
 	StateError                    // любая другая ошибка
 )
 
+// MarshalText нужен, чтобы в JSON состояние было словом, а не числом.
+func (s State) MarshalText() ([]byte, error) {
+	return []byte(s.String()), nil
+}
+
 func (s State) String() string {
 	switch s {
 	case StateOpen:
@@ -32,6 +37,8 @@ func (s State) String() string {
 		return "canceled"
 	case StateError:
 		return "error"
+	case StateUnknown:
+		return "unknown"
 	}
 	return "unknown"
 }

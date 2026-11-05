@@ -90,6 +90,9 @@ func TestPorts_Invalid(t *testing.T) {
 func TestPorts_AllProblemsAreReported(t *testing.T) {
 	t.Parallel()
 	err := Ports(80, 0, 70000, 443, -5).Err()
+	if err == nil {
+		t.Fatal("Err() = nil, want ErrInvalidPort")
+	}
 	if !errors.Is(err, ErrInvalidPort) {
 		t.Fatalf("Err() = %v, want ErrInvalidPort", err)
 	}
@@ -455,4 +458,26 @@ func FuzzParsePorts(f *testing.F) {
 			t.Fatalf("ParsePorts(%q): round trip of %q gave %q, %v", spec, set.String(), again.String(), err)
 		}
 	})
+}
+
+func TestPortSet_LenAndContains(t *testing.T) {
+	t.Parallel()
+	s := Union(Ports(22, 443), Range(8000, 8100), Ports(65535))
+	if got, want := s.Len(), 2+101+1; got != want {
+		t.Errorf("Len() = %d, want %d", got, want)
+	}
+	for _, p := range []int{22, 443, 8000, 8050, 8100, 65535} {
+		if !s.Contains(p) {
+			t.Errorf("Contains(%d) = false, want true", p)
+		}
+	}
+	for _, p := range []int{-1, 0, 1, 21, 23, 442, 444, 7999, 8101, 65534, 65536} {
+		if s.Contains(p) {
+			t.Errorf("Contains(%d) = true, want false", p)
+		}
+	}
+	var empty PortSet
+	if empty.Len() != 0 || empty.Contains(80) {
+		t.Error("пустой набор не пуст")
+	}
 }
