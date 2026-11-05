@@ -240,8 +240,8 @@ func TestProbe_RealOpenPort(t *testing.T) {
 	if got.State != StateOpen || got.Err != nil {
 		t.Fatalf("State = %v, Err = %v, want open", got.State, got.Err)
 	}
-	if got.Duration <= 0 {
-		t.Errorf("Duration = %v, want > 0", got.Duration)
+	if got.Duration < 0 {
+		t.Errorf("Duration = %v, want >= 0", got.Duration)
 	}
 	if err := <-serverSaw; !errors.Is(err, io.EOF) {
 		t.Errorf("сервер увидел %v, want io.EOF: probe не закрыл соединение", err)

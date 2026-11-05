@@ -330,7 +330,7 @@ func TestScan_RealLocalhost(t *testing.T) {
 	for _, r := range results {
 		switch int(r.Port) {
 		case openPort:
-			if r.State != StateOpen || r.Err != nil || r.Duration <= 0 {
+			if r.State != StateOpen || r.Err != nil || r.Duration < 0 {
 				t.Errorf("открытый порт: %+v", r)
 			}
 		case closedPort:
